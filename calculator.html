@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --charcoal-void: #171615;
+    --gunmetal-panel: #292725;
+    --gunmetal-panel-light: #322f2c;
+    --graphite-key: #3b3835;
+    --graphite-key-hi: #45413d;
+    --copper-signal: #c9703f;
+    --copper-signal-hi: #dd8452;
+    --amber-glow: #ffb454;
+    --bone-white: #ede6dc;
+    --bone-dim: #9c968c;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    height:100%;
+    margin:0;
+  }
+
+  body{
+    background:
+      radial-gradient(ellipse 900px 700px at 50% 30%, #201e1c 0%, var(--charcoal-void) 65%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding:24px;
+  }
+
+  .device{
+    position:relative;
+    width:340px;
+    max-width:100%;
+    background:linear-gradient(160deg, var(--gunmetal-panel-light), var(--gunmetal-panel) 60%);
+    border-radius:22px;
+    padding:22px 18px 24px;
+    box-shadow:
+      0 40px 80px -20px rgba(0,0,0,0.7),
+      0 2px 0 rgba(255,255,255,0.04) inset,
+      0 -2px 0 rgba(0,0,0,0.5) inset;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+
+  /* machined flathead screws in each corner */
+  .screw{
+    position:absolute;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 35% 30%, #6b6660, #2a2724 70%);
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.6),
+      0 -1px 0 rgba(255,255,255,0.05) inset;
+  }
+  .screw::after{
+    content:"";
+    position:absolute;
+    top:50%; left:50%;
+    width:8px; height:1.5px;
+    background:rgba(0,0,0,0.55);
+    transform:translate(-50%,-50%) rotate(28deg);
+    border-radius:1px;
+  }
+  .screw.tl{ top:12px; left:12px; }
+  .screw.tr{ top:12px; right:12px; }
+  .screw.bl{ bottom:12px; left:12px; }
+  .screw.br{ bottom:12px; right:12px; }
+
+  .brand{
+    text-align:center;
+    font-size:10.5px;
+    letter-spacing:0.28em;
+    color:var(--bone-dim);
+    text-transform:uppercase;
+    margin:2px 0 14px;
+    font-weight:500;
+  }
+
+  /* recessed VFD-style display */
+  .display-well{
+    background:#0d0c0b;
+    border-radius:12px;
+    padding:22px 18px 16px;
+    margin-bottom:18px;
+    box-shadow:
+      inset 0 4px 10px rgba(0,0,0,0.75),
+      inset 0 -1px 0 rgba(255,255,255,0.03);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .display-well::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.012) 0px,
+      rgba(255,255,255,0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events:none;
+  }
+
+  .prev-line{
+    min-height:16px;
+    text-align:right;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:#8a6a45;
+    letter-spacing:0.02em;
+    opacity:0.85;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .main-line{
+    text-align:right;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:500;
+    font-size:40px;
+    color:var(--amber-glow);
+    text-shadow:
+      0 0 6px rgba(255,180,84,0.55),
+      0 0 18px rgba(255,180,84,0.25);
+    letter-spacing:0.01em;
+    white-space:nowrap;
+    overflow:hidden;
+    margin-top:2px;
+    transition:opacity 0.08s ease;
+  }
+
+  .keys{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+  }
+
+  button{
+    -webkit-tap-highlight-color: transparent;
+    border:none;
+    outline:none;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px;
+    font-weight:600;
+    height:60px;
+    border-radius:12px;
+    cursor:pointer;
+    color:var(--bone-white);
+    background:linear-gradient(160deg, var(--graphite-key-hi), var(--graphite-key) 65%);
+    box-shadow:
+      0 3px 0 rgba(0,0,0,0.45),
+      0 5px 8px rgba(0,0,0,0.35),
+      0 1px 0 rgba(255,255,255,0.06) inset;
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+    position:relative;
+  }
+
+  button:active{
+    transform:translateY(3px);
+    box-shadow:
+      0 0 0 rgba(0,0,0,0.45),
+      0 1px 3px rgba(0,0,0,0.35),
+      0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+
+  button:focus-visible{
+    outline:2px solid var(--amber-glow);
+    outline-offset:2px;
+  }
+
+  .fn{
+    background:linear-gradient(160deg, #575049, #4a443e 65%);
+    color:var(--bone-white);
+    font-size:17px;
+  }
+
+  .op{
+    background:linear-gradient(160deg, var(--copper-signal-hi), var(--copper-signal) 65%);
+    color:#20130a;
+    font-size:22px;
+  }
+
+  .op.active{
+    filter:brightness(1.18);
+    box-shadow:
+      0 3px 0 rgba(0,0,0,0.45),
+      0 0 14px rgba(201,112,63,0.6),
+      0 1px 0 rgba(255,255,255,0.08) inset;
+  }
+
+  .zero{
+    grid-column: span 2;
+  }
+
+  .equals{
+    background:linear-gradient(160deg, var(--copper-signal-hi), var(--copper-signal) 65%);
+    color:#20130a;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    button, .main-line{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="device">
+    <div class="screw tl"></div>
+    <div class="screw tr"></div>
+    <div class="screw bl"></div>
+    <div class="screw br"></div>
+
+    <div class="brand">MODEL&nbsp;VII&nbsp;·&nbsp;ARITHMOMETER</div>
+
+    <div class="display-well">
+      <div class="prev-line" id="prevLine">&nbsp;</div>
+      <div class="main-line" id="mainLine">0</div>
+    </div>
+
+    <div class="keys" id="keys">
+      <button class="fn" data-action="clear">AC</button>
+      <button class="fn" data-action="sign">±</button>
+      <button class="fn" data-action="percent">%</button>
+      <button class="op" data-op="÷">÷</button>
+
+      <button data-num="7">7</button>
+      <button data-num="8">8</button>
+      <button data-num="9">9</button>
+      <button class="op" data-op="×">×</button>
+
+      <button data-num="4">4</button>
+      <button data-num="5">5</button>
+      <button data-num="6">6</button>
+      <button class="op" data-op="−">−</button>
+
+      <button data-num="1">1</button>
+      <button data-num="2">2</button>
+      <button data-num="3">3</button>
+      <button class="op" data-op="+">+</button>
+
+      <button class="zero" data-num="0">0</button>
+      <button data-action="decimal">.</button>
+      <button class="equals" data-action="equals">=</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const mainLine = document.getElementById('mainLine');
+  const prevLine = document.getElementById('prevLine');
+  const keys = document.getElementById('keys');
+
+  let current = "0";
+  let previous = null;
+  let operator = null;
+  let overwrite = true;
+
+  function formatDisplay(value){
+    if (value === "Error") return value;
+    const num = parseFloat(value);
+    if (Number.isNaN(num)) return "0";
+    if (Math.abs(num) >= 1e12 || (Math.abs(num) < 1e-9 && num !== 0)) {
+      return num.toExponential(4);
+    }
+    let str = value.toString();
+    if (str.length > 12) {
+      str = num.toPrecision(10).toString();
+    }
+    return str;
+  }
+
+  function render(){
+    mainLine.textContent = formatDisplay(current);
+    if (previous !== null && operator){
+      prevLine.textContent = `${formatDisplay(previous)} ${operator}`;
+    } else {
+      prevLine.textContent = "\u00A0";
+    }
+    document.querySelectorAll('.op').forEach(b=>{
+      b.classList.toggle('active', b.dataset.op === operator);
+    });
+  }
+
+  function inputDigit(d){
+    if (overwrite){
+      current = d === "." ? "0." : d;
+      overwrite = false;
+      return;
+    }
+    if (d === "." && current.includes(".")) return;
+    if (current === "0" && d !== ".") { current = d; return; }
+    current += d;
+  }
+
+  function compute(a, b, op){
+    a = parseFloat(a); b = parseFloat(b);
+    switch(op){
+      case "+": return a + b;
+      case "−": return a - b;
+      case "×": return a * b;
+      case "÷": return b === 0 ? NaN : a / b;
+      default: return b;
+    }
+  }
+
+  function setOperator(op){
+    if (operator && !overwrite){
+      const result = compute(previous, current, operator);
+      previous = Number.isNaN(result) ? "Error" : result;
+      current = previous;
+    } else {
+      previous = current;
+    }
+    operator = op;
+    overwrite = true;
+  }
+
+  function equals(){
+    if (operator == null) return;
+    const result = compute(previous, current, operator);
+    current = Number.isNaN(result) ? "Error" : result;
+    previous = null;
+    operator = null;
+    overwrite = true;
+  }
+
+  function clearAll(){
+    current = "0"; previous = null; operator = null; overwrite = true;
+  }
+
+  function toggleSign(){
+    if (current === "0") return;
+    current = current.startsWith("-") ? current.slice(1) : "-" + current;
+  }
+
+  function percent(){
+    current = (parseFloat(current) / 100).toString();
+  }
+
+  keys.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const { num, op, action } = btn.dataset;
+
+    if (num !== undefined) inputDigit(num);
+    else if (op !== undefined) setOperator(op);
+    else if (action === "clear") clearAll();
+    else if (action === "sign") toggleSign();
+    else if (action === "percent") percent();
+    else if (action === "decimal") inputDigit(".");
+    else if (action === "equals") equals();
+
+    render();
+  });
+
+  window.addEventListener('keydown', (e)=>{
+    const k = e.key;
+    if (/^[0-9]$/.test(k)) inputDigit(k);
+    else if (k === ".") inputDigit(".");
+    else if (k === "+") setOperator("+");
+    else if (k === "-") setOperator("−");
+    else if (k === "*") setOperator("×");
+    else if (k === "/") { e.preventDefault(); setOperator("÷"); }
+    else if (k === "Enter" || k === "=") equals();
+    else if (k === "Escape") clearAll();
+    else if (k === "%") percent();
+    else if (k === "Backspace"){
+      if (!overwrite){
+        current = current.length > 1 ? current.slice(0,-1) : "0";
+        if (current === "-") current = "0";
+      }
+    } else { return; }
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
